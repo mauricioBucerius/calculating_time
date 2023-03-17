@@ -13,40 +13,49 @@ def get_daily_work_hour(worktime, workdays=5):
     mins_daily = round(mins/workdays + (hours/workdays - hours_daily)*60)
     return f'{formate_clock(hours_daily)}:{formate_clock(mins_daily)}'
 
-def get_work_hour(start, **kwargs):
+def get_time_pause(start, **kwargs):
     time_now = datetime.datetime.now().strftime("%H:%M")
-    breakfast = False
     lunch = False
-    lunch_pause = "0:00"
-                
+    pause = '0:00'
+    
     if not is_later(start, TIME_BREAKFAST) and is_later(time_now, TIME_BREAKFAST):
-        breakfast = True
-
-    if not is_later(start, TIME_LUNCH) and is_later(time_now, TIME_LUNCH):
-        lunch = True
-        
+        if not is_later(pause, DURATION_BREAKFAST) and not is_later(get_time_dif(time_now, TIME_BREAKFAST), DURATION_BREAKFAST):
+            pause = get_time_dif(time_now, TIME_BREAKFAST)
+        else: 
+            pause = DURATION_BREAKFAST
     for key, value in kwargs.items():
         if key == 'lunch_pause':
-            lunch_pause = value
-            lunch = False
-            
-    if lunch and breakfast:
-        time_pause = "0:45"
-    elif lunch:
-        time_pause = "0:30"
-    elif breakfast:
-        time_pause = "0:15"
-    else:
-        time_pause = "0:00"
+            pause = get_time_sum(pause, value)
+            lunch = True
         
-    time_pause = get_time_sum([time_pause, lunch_pause])
-    print(f'heutige Pausenzeit: {time_pause} h')
-    return get_time_dif(time_now, [start, time_pause])
+    if not lunch and not is_later(start, TIME_LUNCH) and is_later(time_now, TIME_LUNCH):
+        if not is_later(pause, DURATION_LUNCH) and not is_later(get_time_dif(time_now, TIME_LUNCH), DURATION_LUNCH):
+            pause = get_time_sum([pause, get_time_dif(time_now, TIME_LUNCH)])
+        else: 
+            pause = get_time_sum([pause, DURATION_LUNCH])
+    return pause
+
+def get_work_hour(start, **kwargs):
+    time_now = datetime.datetime.now().strftime("%H:%M")
+    pause = get_time_pause(start)
+    print(f'heutige Pausenzeit: {pause} h')
+    return get_time_dif(time_now, [start, pause])
 
 def get_end_work(current_worktime, worktime):
-    time_now = datetime.datetime.now().strftime("%H:%M")
-    time_left = get_time_dif(worktime, current_worktime)
-    return get_time_sum([time_now, time_left])
+    # print(current_worktime, worktime)
+    start = get_time_dif(current_worktime, 
+                         datetime.datetime.now().strftime("%H:%M"))
+    
+    cur_pause = get_time_pause(start)
+    time_pause = get_time_dif(cur_pause, get_time_sum([DURATION_BREAKFAST, 
+                                                       DURATION_LUNCH]))
+    # print(cur_pause, current_worktime, datetime.datetime.now().strftime("%H:%M"))
+    if not is_later(current_worktime, worktime):
+        time_now = datetime.datetime.now().strftime("%H:%M")
+        time_left = get_time_dif(worktime, current_worktime)
+        return get_time_sum([time_now, time_left, time_pause])
+    else:
+        return "Done!"
 
 
 def formate_clock(value):
@@ -73,6 +82,10 @@ def formate_clock(value):
         
     
 def is_later(time_1, comp_time):
+    """
+    compares if time_1 is later then comp_time and returns True
+    
+    """
     hours_1, mins_1 = split_time(time_1)
     hours_2, mins_2 = split_time(comp_time)
     
@@ -85,44 +98,36 @@ def is_later(time_1, comp_time):
         return False
     
     return True
+
+def get_calc_mins(diff_hours, mins_1, mins_2):
     
+    if mins_1 > mins_2:
+        diff_mins = mins_1 - mins_2
+    else:
+        # if mins_1 smaller, then there is no full hour between both
+        # times and you have to calc the difference between mins_1 to the 
+        # full 60 minutes and the add the mins_1 for the real difference
+        mins_to_60 = 60 - mins_2
+        diff_mins = mins_1 + mins_to_60
+        
+        if diff_mins == 60:
+            # If the difference is 60 - zero it and don't subtract the hours
+            diff_mins = 0 
+        else:    
+            diff_hours -= 1     # there is no full hour difference -> sub 1
+    return diff_mins
+
 def get_calc_dif(hours_1, mins_1, hours_2, mins_2):
     # difference between both hours
     if hours_1 >= hours_2:
         diff_hours = hours_1 - hours_2
-        
         # difference between both minutes
-        if mins_1 > mins_2:
-            diff_mins = mins_1 - mins_2
-        else:
-            # if mins_1 smaller, then there is no full hour between both
-            # times and you have to calc the difference between mins_1 to the 
-            # full 60 minutes and the add the mins_1 for the real difference
-            mins_to_60 = 60 - mins_2
-            diff_mins = mins_1 + mins_to_60
-            
-            if diff_mins == 60:
-                # If the difference is 60 - zero it and don't subtract the hours
-                diff_mins = 0 
-            else:    
-                diff_hours -= 1     # there is no full hour difference -> sub 1
+        diff_mins = get_calc_mins(diff_hours, mins_1, mins_2)
+        
     else:
         diff_hours = hours_2 - hours_1
         # difference between both minutes
-        if mins_2 > mins_1:
-            diff_mins = mins_2 - mins_1
-        else:
-            # if mins_1 smaller, then there is no full hour between both
-            # times and you have to calc the difference between mins_1 to the 
-            # full 60 minutes and the add the mins_1 for the real difference
-            mins_to_60 = 60 - mins_2
-            diff_mins = mins_1 + mins_to_60
-            
-            if diff_mins == 60:
-                # If the difference is 60 - zero it and don't subtract the hours
-                diff_mins = 0 
-            else:    
-                diff_hours -= 1     # there is no full hour difference -> sub 1
+        diff_mins = get_calc_mins(diff_hours, mins_2, mins_1)
     return diff_hours, diff_mins
 
 
@@ -204,6 +209,7 @@ def split_time(time):
         returns mins
 
     """
+    # print(time)
     if isinstance(time, str):
         time_str = time.split(':')
         hours = int(time_str[0])
@@ -255,8 +261,8 @@ def get_time_dif(time_1, time_2, rv='all'):
     
 if __name__ == '__main__':
     arbeitswoche = "38:00"    
-    today_start = "8:19"
-    week = []
+    today_start = "7:48"
+    week = ["7:47", "7:33", "7:59", "7:48"]
     left_arbeitswoche = get_time_dif(arbeitswoche, get_time_sum(week))
     cur_work = get_work_hour(today_start)
     week.append(cur_work)
