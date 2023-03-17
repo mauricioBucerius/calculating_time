@@ -100,7 +100,6 @@ def is_later(time_1, comp_time):
     return True
 
 def get_calc_mins(diff_hours, mins_1, mins_2):
-    
     if mins_1 > mins_2:
         diff_mins = mins_1 - mins_2
     else:
@@ -115,19 +114,20 @@ def get_calc_mins(diff_hours, mins_1, mins_2):
             diff_mins = 0 
         else:    
             diff_hours -= 1     # there is no full hour difference -> sub 1
-    return diff_mins
+    return diff_hours, diff_mins
 
 def get_calc_dif(hours_1, mins_1, hours_2, mins_2):
     # difference between both hours
+    
     if hours_1 >= hours_2:
         diff_hours = hours_1 - hours_2
         # difference between both minutes
-        diff_mins = get_calc_mins(diff_hours, mins_1, mins_2)
+        diff_hours, diff_mins = get_calc_mins(diff_hours, mins_1, mins_2)
         
     else:
         diff_hours = hours_2 - hours_1
         # difference between both minutes
-        diff_mins = get_calc_mins(diff_hours, mins_2, mins_1)
+        diff_hours, diff_mins = get_calc_mins(diff_hours, mins_2, mins_1)
     return diff_hours, diff_mins
 
 
