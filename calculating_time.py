@@ -7,11 +7,30 @@ TIME_LUNCH = "11:30"        # lunch time in the midday
 DURATION_BREAKFAST = "0:15" # Breakfast break 
 DURATION_LUNCH = "0:30"     # Lunch break
 
+
 def get_daily_work_hour(worktime, workdays=5):
+    """
+    calculates the average hours which you have to work daily to achieve the
+    weekly goal of hours. Updates with every worked day.
+
+    Parameters
+    ----------
+    worktime : str - hh:mm
+        the time which you alreay worked.
+    workdays : int, optional
+        number of days you work. The default is 5.
+
+    Returns
+    -------
+    str - hh:mm
+        the average time per day.
+
+    """
     hours, mins = split_time(worktime)
     hours_daily = int(np.floor(hours/workdays))
     mins_daily = round(mins/workdays + (hours/workdays - hours_daily)*60)
     return f'{formate_clock(hours_daily)}:{formate_clock(mins_daily)}'
+
 
 def get_time_pause(start, **kwargs):
     """
@@ -51,11 +70,12 @@ def get_time_pause(start, **kwargs):
             pause = get_time_sum([pause, DURATION_LUNCH])
     return pause
 
+
 def get_work_hour(start, **kwargs):
     time_now = datetime.datetime.now().strftime("%H:%M")
     pause = get_time_pause(start)
-    print(f'heutige Pausenzeit: {pause} h')
     return get_time_dif(time_now, [start, pause])
+
 
 def get_end_work(current_worktime, worktime):
     """
@@ -133,7 +153,29 @@ def is_later(time_1, comp_time):
     
     return True
 
+
 def get_calc_mins(diff_hours, mins_1, mins_2):
+    """
+    calculates the difference in the minutes. It'll be executed twice when 
+    calculating the difference in hours/mins. -> own function
+
+    Parameters
+    ----------
+    diff_hours : int
+        number between 0 and 23.
+    mins_1 : int
+        number between 0 and 59.
+    mins_2 : int
+        number between 0 and 59.
+
+    Returns
+    -------
+    diff_hours : int
+        number between 0 and 23.
+    diff_mins : int
+        number between 0 and 59.
+
+    """
     if mins_1 > mins_2:
         diff_mins = mins_1 - mins_2
     else:
@@ -157,7 +199,31 @@ def get_calc_mins(diff_hours, mins_1, mins_2):
                 diff_hours -= 1     # there is no full hour difference -> sub 1
     return diff_hours, diff_mins
 
+
 def get_calc_dif(hours_1, mins_1, hours_2, mins_2):
+    """
+    calculates the difference between the hours and minutes
+
+    Parameters
+    ----------
+    hours_1 : int
+        number between 0 and 23.
+    mins_1 : int
+        number between 0 and 59.
+    hours_2 : int
+        number between 0 and 23.
+    mins_2 : int
+        number between 0 and 59.
+
+    Returns
+    -------
+    diff_hours : int
+        difference in hours.
+    diff_mins : TYPE
+        difference in minutes
+
+    """
+    
     # difference between both hours
     if hours_1 >= hours_2:
         diff_hours = hours_1 - hours_2
@@ -304,9 +370,11 @@ def get_time_dif(time_1, time_2, rv='all'):
     
     
 if __name__ == '__main__':
-    arbeitswoche = "38:00"    
-    today_start = "8:05"
-    week = ["8:22"]
+    arbeitswoche = ""    
+    today_start = ""
+    week = []
+    print(f"Uhrzeit: {datetime.datetime.now().strftime('%H:%M')} Uhr\n")
+    
     left_arbeitswoche = get_time_dif(arbeitswoche, get_time_sum(week))
     cur_work = get_work_hour(today_start)
     week.append(cur_work)
@@ -315,6 +383,7 @@ if __name__ == '__main__':
     time_left = get_time_dif(arbeitswoche, week_work)
     daily_work = get_daily_work_hour(left_arbeitswoche, workdays=5-len(week)+1)
     
+    print(f'heutige Pausenzeit: {get_time_pause(today_start)} h')
     print(f'tägliche Arbeitszeit: {daily_work} h')
     print(f'heutige Arbeitszeit: {cur_work} h')
     print(f'wöchentliche Arbeitszeit: {week_work} h')
