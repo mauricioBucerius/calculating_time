@@ -14,7 +14,7 @@ def get_daily_work_hour(worktime, workdays=5):
     weekly goal of hours. Updates with every worked day.
 
     Parameters
-    ----------
+    ---------- 
     worktime : str - hh:mm
         the time which you alreay worked.
     workdays : int, optional
@@ -71,7 +71,22 @@ def get_time_pause(start, **kwargs):
     return pause
 
 
-def get_work_hour(start, **kwargs):
+def get_work_hour(start):
+    """
+    calculates the hours which are worked up to now
+
+    Parameters
+    ----------
+    start : str
+        start time - hh:mm.
+        
+
+    Returns
+    -------
+    str
+        the hours - hh:mm.
+
+    """
     time_now = datetime.datetime.now().strftime("%H:%M")
     pause = get_time_pause(start)
     return get_time_dif(time_now, [start, pause])
@@ -373,6 +388,7 @@ if __name__ == '__main__':
     arbeitswoche = ""    
     today_start = ""
     week = []
+    
     print(f"Uhrzeit: {datetime.datetime.now().strftime('%H:%M')} Uhr\n")
     
     left_arbeitswoche = get_time_dif(arbeitswoche, get_time_sum(week))
@@ -384,8 +400,8 @@ if __name__ == '__main__':
     daily_work = get_daily_work_hour(left_arbeitswoche, workdays=5-len(week)+1)
     
     print(f'heutige Pausenzeit: {get_time_pause(today_start)} h')
-    print(f'tägliche Arbeitszeit: {daily_work} h')
     print(f'heutige Arbeitszeit: {cur_work} h')
+    print(f'tägliche Arbeitszeit: {daily_work} h')
     print(f'wöchentliche Arbeitszeit: {week_work} h')
     print(f'restliche Arbeitszeit: {time_left} h')
     print(f'Ende Arbeitszeit: {get_end_work(cur_work, daily_work)} Uhr')
