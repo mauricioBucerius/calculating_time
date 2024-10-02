@@ -8,6 +8,28 @@ DURATION_BREAKFAST = "0:15" # Breakfast break
 DURATION_LUNCH = "0:30"     # Lunch break
 
 
+def get_time():
+    """
+    returns the current time in the format "HH:MM"
+    """
+    return datetime.datetime.now().strftime("%H:%M")
+
+
+def get_date(yesterday=False):
+    """
+    returns the current date in the form YYYY-MM-DD
+    """
+    date = datetime.datetime.now().strftime("%Y-%m-%d")
+    if yesterday:
+        date_split = date.split('-')
+        if int(date_split[-1]) > 1:
+            date_split[2] = str(int(date_split[-1])-1)
+        else:
+            date_split[2] = str(30)
+        date = '-'.join(date_split)
+    return date
+
+
 def get_daily_work_hour(worktime, workdays=5):
     """
     calculates the average hours which you have to work daily to achieve the
@@ -150,23 +172,97 @@ def formate_clock(value):
         return str(value)
         
     
-def is_later(time_1, comp_time):
-    """
-    compares if time_1 is later then comp_time and returns True
+def split_date_time(time: str):
+    if time_1.find('T'):
+        return time_1.split('T')
+    else:
+        return time_1, None
     
-    """
+
+def is_later_time(time_1: str, time_2: str) -> bool:
     hours_1, mins_1 = split_time(time_1)
-    hours_2, mins_2 = split_time(comp_time)
-    
-    # print(mins_1, mins_2)
+    hours_2, mins_2 = split_time(time_2)
+
     # compares if time_1 is before time_2 or later
     if hours_1 < hours_2:
         return False
-    
+
     if hours_1 == hours_2 and mins_1 < mins_2:
+        # when the time is equal -> True
+        return False
+    return True
+        
+
+def is_later_date(date_1: str, date_2: str) -> bool:
+    """checks if date_1 is later then date_2
+
+    Args:
+        date_1 (str): date in form dd-mm-yyyy
+        date_2 (str): date in form dd-mm-yyyy
+
+    Returns:
+        bool: True when later, False rest
+    """
+    
+    year_1, month_1, day_1 = split_date(date_1)
+    year_2, month_2, day_2 = split_date(date_1)
+    
+    if year_1 < year_2:
+        return False
+    
+    if month_1 < month_2:
+        return False
+    
+    if month_1 == month_2 and day_1 <= day_2:
         return False
     
     return True
+
+
+def is_later(time_1, time_2) -> bool:
+    """
+        compares time_2 with time_1 --> True when time_1 is after time_2
+        time_1: str, format HH:MM
+        time_2: str, format HH:MM
+        return: bool
+    """
+    if time_1 is None or time_2 is None:
+        return False
+    
+    if isinstance(time_2, list):
+        comp_list: list = []
+        for item in time_2:
+            comp_list.append(is_later(time_1, item))
+        
+        if all(comp_list):
+            return True
+        else:
+            return False
+    else:
+
+        time_1_time, time_1_date = split_date_time(time_1)
+        time_2_time, time_2_date = split_date_time(time_2)
+        
+        if time_1_date is not None and time_2_date is not None:
+            # if a date is given check if it's today or tomorrow
+            if not is_today() and is_later_date(time_1_date, time_2_date):
+                # if it's not today -> some before or after AND later -> date is later then the other -> time doesn not matter anymore
+                    return True
+                
+        # if no date given -> check only for the time
+        return is_later_time(time_1_time, time_2_time)
+
+
+def is_today(date_1, date_2):
+    if date_1 is None or date_2 is None:
+        return False
+    year_1, month_1, day_1 = split_date(date_1)
+    year_2, month_2, day_2 = split_date(date_2)
+
+    if year_1 != year_2 or month_1 != month_2 or day_1 != day_2:
+        return False
+    else:
+        return True
 
 
 def get_calc_mins(diff_hours, mins_1, mins_2):
